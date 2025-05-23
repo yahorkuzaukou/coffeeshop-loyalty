@@ -5,6 +5,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
+    netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pipenv
@@ -16,8 +17,13 @@ COPY Pipfile* ./
 # Install dependencies using pipenv
 RUN pipenv install --system --deploy
 
-# Copy the rest of the application
-COPY . .
+# Copy the application code
+COPY src/ /app/src/
+COPY deploy/ /app/deploy/
+
+# Make entrypoint script executable
+RUN chmod +x /app/deploy/entrypoint.sh && \
+    ls -la /app/deploy/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 8000
@@ -25,5 +31,5 @@ EXPOSE 8000
 # Set PYTHONPATH to include the src directory
 ENV PYTHONPATH=/app/src
 
-# Command to run the application
-CMD ["python", "-m", "main"] 
+# Use the entrypoint script
+ENTRYPOINT ["/bin/bash", "/app/deploy/entrypoint.sh"]
